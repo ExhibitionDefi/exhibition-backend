@@ -80,7 +80,7 @@ app.use(ensureCsrfToken)
 // =============================================
 // 7. HEALTH CHECK
 // =============================================
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     success: true,
     message: 'Exhibition Backend is running',
