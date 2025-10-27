@@ -123,9 +123,9 @@ export function sanitizeObject<T extends Record<string, any>>(
   for (const key in sanitized) {
     const value = sanitized[key]
     if (typeof value === 'string') {
-      sanitized[key] = allowHtml.includes(key)
+      sanitized[key] = (allowHtml.includes(key)
         ? sanitizeHtmlInput(value)
-        : sanitizeInput(value)
+        : sanitizeInput(value)) as T[Extract<keyof T, string>]
     }
   }
   
