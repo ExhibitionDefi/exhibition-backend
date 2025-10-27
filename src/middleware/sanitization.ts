@@ -7,7 +7,7 @@ import { sanitizeObject } from '../utils/sanitize.js'
  */
 export function sanitizeRequestBody(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   if (req.body && typeof req.body === 'object') {
@@ -25,7 +25,7 @@ export function sanitizeRequestBody(
  */
 export function sanitizeQueryParams(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void {
   if (req.query && typeof req.query === 'object') {

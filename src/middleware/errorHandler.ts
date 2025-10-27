@@ -21,7 +21,7 @@ export function errorHandler(
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   // Log full error details server-side (never sent to client)
   console.error('❌ Unhandled Error:', {

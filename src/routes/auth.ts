@@ -75,7 +75,7 @@ router.post('/verify', authLimiter, async (req, res) => {
  * POST /api/auth/logout
  * Clear auth cookies
  */
-router.post('/logout', (req, res) => {
+router.post('/logout', (_s, res) => {
   res.clearCookie('auth_token')
   res.clearCookie('csrf_token')
   
@@ -124,7 +124,7 @@ router.get('/me', async (req, res) => {
  * GET /api/auth/message
  * Get the message that should be signed
  */
-router.get('/message', (req, res) => {
+router.get('/message', (_req, res) => {
   res.json({
     success: true,
     data: {

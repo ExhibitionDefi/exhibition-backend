@@ -30,7 +30,7 @@ function generateCsrfToken(): string {
  * Set CSRF token in cookie
  * Call this on auth routes to issue new tokens
  */
-export function setCsrfToken(req: Request, res: Response): string {
+export function setCsrfToken(_req: Request, res: Response): string {
   const token = generateCsrfToken()
   
   res.cookie(CSRF_COOKIE_NAME, token, {
