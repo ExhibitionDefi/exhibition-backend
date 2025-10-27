@@ -42,3 +42,12 @@ Thumbs.db
 .cache
 .parcel-cache
 .vite
+
+# TypeScript incremental cache
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Coverage reports (if you add tests later)
+coverage

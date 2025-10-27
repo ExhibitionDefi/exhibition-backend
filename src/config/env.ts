@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import dotenv from 'dotenv'
-import type { StringValue } from 'ms'
+import type { StringValue } from 'ms' 
 
 dotenv.config()
 
@@ -8,7 +8,7 @@ dotenv.config()
  * Environment variable schema with strict validation
  */
 const envSchema = z.object({
-  PORT: z.string().default('3001').transform(Number),
+  PORT: z.coerce.number().int().positive().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
@@ -17,12 +17,12 @@ const envSchema = z.object({
   WALLET_WHITELIST: z.string().transform((val: string) => 
     val.split(',').map((addr: string) => addr.trim().toLowerCase()).filter(Boolean)
   ).default(''),
-  RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number),
-  RATE_LIMIT_MAX_REQUESTS: z.string().default('100').transform(Number),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().positive().max(24 * 60 * 60 * 1000).default(900000),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
   CSRF_SECRET: z.string().min(32, 'CSRF_SECRET must be at least 32 characters'),
   CHAIN_ID: z.string().optional(),
   RPC_URL: z.string().url().optional(),
-  HELMET_ENABLED: z.string().default('true').transform((val: string) => val === 'true'),
+  HELMET_ENABLED: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 })
 
@@ -41,7 +41,7 @@ try {
   throw error
 }
 
-export const config = {
+export const config = Object.freeze({
   server: {
     port: env.PORT,
     nodeEnv: env.NODE_ENV,
@@ -54,6 +54,7 @@ export const config = {
   },
   jwt: {
     secret: env.JWT_SECRET,
+    // Safe: expiresIn is a validated string (e.g. '24h') — no need for StringValue
     expiresIn: env.JWT_EXPIRES_IN as StringValue,
   },
   auth: {
@@ -68,8 +69,8 @@ export const config = {
     secret: env.CSRF_SECRET,
   },
   chain: {
-    chainId: env.CHAIN_ID,
-    rpcUrl: env.RPC_URL,
+    chainId: env.CHAIN_ID ?? null,
+    rpcUrl: env.RPC_URL ?? null,
   },
   security: {
     helmetEnabled: env.HELMET_ENABLED,
@@ -77,7 +78,7 @@ export const config = {
   logging: {
     level: env.LOG_LEVEL,
   },
-} as const
+} as const)
 
 // Validate secrets
 if (config.jwt.secret.includes('change-this')) {
@@ -90,8 +91,16 @@ if (config.csrf.secret.includes('change-this')) {
   if (config.server.isProduction) process.exit(1)
 }
 
-console.log('✅ Environment validation passed')
-console.log(`   Mode: ${config.server.nodeEnv}`)
-console.log(`   Port: ${config.server.port}`)
-console.log(`   Frontend: ${config.cors.origin}`)
-console.log(`   Whitelist: ${config.auth.walletWhitelist.length > 0 ? `${config.auth.walletWhitelist.length} wallets` : 'DISABLED'}`)
+if (!config.server.isProduction) {
+  console.log('✅ Environment validation passed')
+  console.log(`   Mode: ${config.server.nodeEnv}`)
+  console.log(`   Port: ${config.server.port}`)
+  console.log(`   Frontend: ${config.cors.origin}`)
+  console.log(
+    `   Whitelist: ${
+      config.auth.walletWhitelist.length > 0
+        ? `${config.auth.walletWhitelist.length} wallets`
+        : 'DISABLED'
+    }`
+  )
+}
