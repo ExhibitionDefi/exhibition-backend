@@ -28,6 +28,11 @@ import projectRoutes from './routes/projects.js'
 const app = express()
 
 // =============================================
+// 0. TRUST PROXY (Required for Render)
+// =============================================
+app.set('trust proxy', 1)
+
+// =============================================
 // 1. SECURITY HEADERS (Helmet)
 // =============================================
 if (config.security.helmetEnabled) {
@@ -78,8 +83,21 @@ app.use(sanitizeQueryParams)
 app.use(ensureCsrfToken)
 
 // =============================================
-// 7. HEALTH CHECK
+// 7. ROOT & HEALTH CHECK
 // =============================================
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    name: 'Exhibition Backend API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth/*',
+      projects: '/api/projects/*'
+    }
+  })
+})
+
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
