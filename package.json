@@ -6,6 +6,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "vercel-build": "tsc",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },
@@ -17,7 +18,7 @@
     "cookie-parser": "^1.4.6",
     "jsonwebtoken": "^9.0.2",
     "ethers": "^6.10.0",
-    "isomorphic-dompurify": "^2.9.0",
+    "xss": "^1.0.15",
     "validator": "^13.11.0",
     "dotenv": "^16.3.1",
     "zod": "^3.22.4"
@@ -27,6 +28,7 @@
     "@types/cors": "^2.8.17",
     "@types/cookie-parser": "^1.4.6",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/xss": "^1.0.5",
     "@types/validator": "^13.11.8",
     "@types/node": "^20.11.5",
     "typescript": "^5.3.3",
