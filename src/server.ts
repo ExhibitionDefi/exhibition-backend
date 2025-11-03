@@ -28,7 +28,7 @@ import projectRoutes from './routes/projects.js'
 const app = express()
 
 // =============================================
-// 0. TRUST PROXY (Required for Render)
+// 0. TRUST PROXY (Required for Vercel/serverless)
 // =============================================
 app.set('trust proxy', 1)
 
@@ -120,19 +120,23 @@ app.use(notFoundHandler)
 app.use(errorHandler)
 
 // =============================================
-// 10. START SERVER
+// 10. START SERVER (Local Development Only)
 // =============================================
-app.listen(config.server.port, () => {
-  console.log(`
+// Only start Express server if not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const PORT = config.server.port || 3000
+  app.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════════╗
 ║   🚀 Exhibition Backend Started           ║
 ╠════════════════════════════════════════════╣
-║   Port: ${config.server.port.toString().padEnd(35)}║
+║   Port: ${PORT.toString().padEnd(35)}║
 ║   Mode: ${config.server.nodeEnv.padEnd(35)}║
 ║   CORS: ${config.cors.origin.padEnd(35)}║
 ║   Whitelist: ${(config.auth.walletWhitelist.length > 0 ? `${config.auth.walletWhitelist.length} wallets` : 'Disabled').padEnd(29)}║
 ╚════════════════════════════════════════════╝
-  `)
-})
+    `)
+  })
+}
 
 export default app
