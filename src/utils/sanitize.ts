@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify'
+import { filterXSS, IFilterXSSOptions } from 'xss'
 import validator from 'validator'
 
 /**
@@ -6,13 +6,14 @@ import validator from 'validator'
  */
 export function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') return ''
-  
-  const cleaned = DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true,
+
+  // Remove all HTML tags
+  const cleaned = filterXSS(input, {
+    whiteList: {}, // No tags allowed
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style']
   })
-  
+
   return cleaned.trim()
 }
 
@@ -21,13 +22,22 @@ export function sanitizeInput(input: string): string {
  */
 export function sanitizeHtmlInput(input: string): string {
   if (!input || typeof input !== 'string') return ''
-  
-  const cleaned = DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: ['b', 'i', 'u', 'em', 'strong', 'br', 'p'],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true,
+
+  // Allow only safe formatting tags
+  const cleaned = filterXSS(input, {
+    whiteList: {
+      b: [],
+      i: [],
+      u: [],
+      em: [],
+      strong: [],
+      br: [],
+      p: []
+    },
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style']
   })
-  
+
   return cleaned.trim()
 }
 
@@ -37,44 +47,44 @@ export function sanitizeHtmlInput(input: string): string {
  */
 export function validateUrl(url: string): string | null {
   if (!url || typeof url !== 'string') return null
-  
+
   const trimmed = url.trim()
-  
+
   if (!trimmed.startsWith('https://') && !trimmed.startsWith('ipfs://')) {
     return null
   }
-  
+
   if (trimmed.startsWith('ipfs://')) {
     const ipfsPattern = /^ipfs:\/\/[a-zA-Z0-9]+/
     return ipfsPattern.test(trimmed) ? trimmed : null
   }
-  
+
   if (!validator.isURL(trimmed, {
     protocols: ['https'],
     require_protocol: true,
   })) {
     return null
   }
-  
+
   try {
     const urlObj = new URL(trimmed)
     const hostname = urlObj.hostname.toLowerCase()
-    
+
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
       return null
     }
-    
+
     const privateRanges = [
       /^10\./,
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
       /^192\.168\./,
       /^169\.254\./,
     ]
-    
+
     if (privateRanges.some(pattern => pattern.test(hostname))) {
       return null
     }
-    
+
     return trimmed
   } catch {
     return null
@@ -97,16 +107,16 @@ export function sanitizeNumeric(
   options: { allowNegative?: boolean; allowDecimal?: boolean } = {}
 ): string | null {
   if (!input || typeof input !== 'string') return null
-  
+
   const { allowNegative = false, allowDecimal = true } = options
   const trimmed = input.trim()
-  
+
   let pattern = '^'
   if (allowNegative) pattern += '-?'
   pattern += '\\d+'
   if (allowDecimal) pattern += '(\\.\\d+)?'
   pattern += '$'
-  
+
   const regex = new RegExp(pattern)
   return regex.test(trimmed) ? trimmed : null
 }
@@ -119,7 +129,7 @@ export function sanitizeObject<T extends Record<string, any>>(
   allowHtml: string[] = []
 ): T {
   const sanitized = { ...obj }
-  
+
   for (const key in sanitized) {
     const value = sanitized[key]
     if (typeof value === 'string') {
@@ -128,6 +138,6 @@ export function sanitizeObject<T extends Record<string, any>>(
         : sanitizeInput(value)) as T[Extract<keyof T, string>]
     }
   }
-  
+
   return sanitized
 }
