@@ -3,12 +3,13 @@ import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import { config } from './config/env.js'
-import { apiLimiter } from './middleware/rateLimiter.js'
+import { apiLimiter, rpcLimiter, authLimiter  } from './middleware/rateLimiter.js'
 import { sanitizeRequestBody, sanitizeQueryParams } from './middleware/sanitization.js'
 import { ensureCsrfToken } from './middleware/csrf.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import authRoutes from './routes/auth.js'
 import projectRoutes from './routes/projects.js'
+import rpcRoutes from './routes/rpc.js'
 
 /**
  * Exhibition Backend - Production-Grade Security
@@ -69,7 +70,7 @@ app.use(cookieParser())
 // =============================================
 // 4. RATE LIMITING
 // =============================================
-app.use('/api', apiLimiter)
+//app.use('/api', apiLimiter)
 
 // =============================================
 // 5. INPUT SANITIZATION
@@ -110,8 +111,9 @@ app.get('/health', (_req, res) => {
 // =============================================
 // 8. API ROUTES
 // =============================================
-app.use('/api/auth', authRoutes)
-app.use('/api/projects', projectRoutes)
+app.use('/api/auth', authLimiter, authRoutes)
+app.use('/api/projects', apiLimiter, projectRoutes)
+app.use('/api/rpc', rpcLimiter, rpcRoutes)
 
 // =============================================
 // 9. ERROR HANDLING
@@ -122,8 +124,12 @@ app.use(errorHandler)
 // =============================================
 // 10. START SERVER
 // =============================================
-app.listen(config.server.port, () => {
-  console.log(`
+// Only start Express server if not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const PORT = config.server.port || 3000
+  app.listen(PORT, () => {
+    console.log(`
+
 ╔════════════════════════════════════════════╗
 ║   🚀 Exhibition Backend Started           ║
 ╠════════════════════════════════════════════╣
@@ -134,5 +140,6 @@ app.listen(config.server.port, () => {
 ╚════════════════════════════════════════════╝
   `)
 })
+}
 
 export default app

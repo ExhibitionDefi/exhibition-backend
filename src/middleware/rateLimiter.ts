@@ -8,7 +8,7 @@ import { config } from '../config/env.js'
 
 /**
  * General API rate limiter
- * 100 requests per 15 minutes per IP
+ * Uses config values: 50 requests per 1 minute per IP
  */
 export const apiLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
@@ -20,7 +20,6 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Key by IP address
   keyGenerator: (req) => {
     return req.ip || 'unknown'
   }
@@ -40,7 +39,27 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful auths
+  skipSuccessfulRequests: true,
+})
+
+/**
+ * Generous rate limiter for RPC proxy
+ * Blockchain operations are frequent - uses 20x the normal API limit
+ */
+export const rpcLimiter = rateLimit({
+  windowMs: config.rateLimit.windowMs, // Same window as API limiter
+  max: config.rateLimit.maxRequests * 20, // 20x more generous (50 * 20 = 1000)
+  message: {
+    success: false,
+    error: 'RPC rate limit exceeded',
+    message: 'Too many blockchain requests, please slow down'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => {
+    return req.ip || 'unknown'
+  }
 })
 
 /**
@@ -58,11 +77,9 @@ export const walletLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    // Use authenticated wallet address as key
     return req.user?.address || req.ip || 'unknown'
   },
   skip: (req) => {
-    // Skip if not authenticated (fall back to IP limiter)
     return !req.user
   }
 })
