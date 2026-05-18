@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
 ![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
@@ -161,7 +161,7 @@ Create or update metadata for a project. Requires a valid JWT cookie. The authen
 ### Installation
 
 ```bash
-git clone https://github.com/your-org/exhibition-backend
+git clone https://github.com/ExhibitionDefi/exhibition-backend
 cd exhibition-backend
 npm install
 ```
