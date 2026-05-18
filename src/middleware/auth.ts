@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
 import { verifyToken } from '../services/jwtService.js'
-import { isWhitelisted } from '../services/walletVerifier.js'
 import type { JWTPayload } from '../types/index.js'
 
 declare global {
@@ -23,7 +22,7 @@ export function authenticateJWT(
   try {
     // Extract token from httpOnly cookie
     const token = req.cookies?.auth_token
-    
+
     if (!token) {
       res.status(401).json({ 
         success: false, 
@@ -32,9 +31,9 @@ export function authenticateJWT(
       })
       return
     }
-    
+
     const decoded = verifyToken(token)
-    
+
     if (!decoded) {
       res.status(401).json({ 
         success: false, 
@@ -43,19 +42,11 @@ export function authenticateJWT(
       })
       return
     }
-    
-    if (!isWhitelisted(decoded.address)) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Access denied',
-        message: 'Wallet not authorized' 
-      })
-      return
-    }
-    
+
+    // Attach decoded user to request
     req.user = decoded
     next()
-    
+
   } catch (error) {
     console.error('Authentication middleware error:', error)
     res.status(500).json({ 
@@ -76,16 +67,16 @@ export function optionalAuth(
 ): void {
   try {
     const token = req.cookies?.auth_token
-    
+
     if (token) {
       const decoded = verifyToken(token)
-      if (decoded && isWhitelisted(decoded.address)) {
+      if (decoded) {
         req.user = decoded
       }
     }
-    
+
     next()
-  } catch (error) {
+  } catch (_error) {
     next()
   }
 }
@@ -102,9 +93,9 @@ export function requireAddress(allowedAddress: string) {
       })
       return
     }
-    
+
     const normalized = allowedAddress.toLowerCase()
-    
+
     if (req.user.address !== normalized) {
       res.status(403).json({ 
         success: false, 
@@ -113,7 +104,7 @@ export function requireAddress(allowedAddress: string) {
       })
       return
     }
-    
+
     next()
   }
 }

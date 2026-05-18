@@ -8,7 +8,7 @@ export interface VerificationResult {
 }
 
 /**
- * Verify a wallet signature and check whitelist
+ * Verify a wallet signature
  */
 export async function verifyWalletSignature(
   address: string,
@@ -45,17 +45,6 @@ export async function verifyWalletSignature(
       }
     }
     
-    // Check whitelist if enabled
-    if (config.auth.walletWhitelist.length > 0) {
-      if (!config.auth.walletWhitelist.includes(normalizedAddress)) {
-        return { 
-          isValid: false, 
-          error: 'Wallet address not in whitelist',
-          recoveredAddress 
-        }
-      }
-    }
-    
     return { isValid: true, recoveredAddress }
     
   } catch (error) {
@@ -65,18 +54,6 @@ export async function verifyWalletSignature(
       error: error instanceof Error ? error.message : 'Verification failed' 
     }
   }
-}
-
-/**
- * Check if an address is whitelisted
- */
-export function isWhitelisted(address: string): boolean {
-  if (config.auth.walletWhitelist.length === 0) {
-    return true
-  }
-  
-  const normalized = address.toLowerCase()
-  return config.auth.walletWhitelist.includes(normalized)
 }
 
 function isValidAddress(address: string): boolean {

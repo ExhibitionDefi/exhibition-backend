@@ -12,22 +12,6 @@ import authRoutes from './routes/auth.js'
 import projectRoutes from './routes/projects.js'
 import rpcRoutes from './routes/rpc.js'
 
-/**
- * Exhibition Backend - Production-Grade Security
- * 
- * Security Features:
- * ✅ httpOnly cookies for JWT (XSS protection)
- * ✅ CSRF tokens for state-changing requests
- * ✅ Input sanitization (XSS prevention)
- * ✅ URL validation (SSRF protection)
- * ✅ Rate limiting (DDoS/brute force protection)
- * ✅ Wallet signature verification
- * ✅ Optional whitelist enforcement
- * ✅ Helmet security headers
- * ✅ CORS configuration
- * ✅ MongoDB database connection
- */
-
 const app = express()
 
 // =============================================
@@ -57,7 +41,7 @@ if (config.security.helmetEnabled) {
 // =============================================
 app.use(cors({
   origin: config.cors.origin,
-  credentials: true, // Required for cookies
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }))
@@ -126,25 +110,22 @@ app.use(errorHandler)
 // =============================================
 // 10. START SERVER (Local Development Only)
 // =============================================
-// Only start Express server if not in Vercel serverless environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   const PORT = config.server.port || 3000
-  
-  // Connect to database first, then start server
+
   connectDatabase()
     .then(() => {
       app.listen(PORT, () => {
         console.log(`
 ╔════════════════════════════════════════════╗
-║   🚀 Exhibition Backend Started           ║
+║    🚀 Exhibition Backend Started           ║
 ╠════════════════════════════════════════════╣
 ║   Port: ${PORT.toString().padEnd(35)}║
 ║   Mode: ${config.server.nodeEnv.padEnd(35)}║
 ║   CORS: ${config.cors.origin.padEnd(35)}║
-║   Database: ${config.database.dbName.padEnd(30)}║
-║   Whitelist: ${(config.auth.walletWhitelist.length > 0 ? `${config.auth.walletWhitelist.length} wallets` : 'Disabled').padEnd(29)}║
+║    Database: ${config.database.dbName.padEnd(30)}║
 ╚════════════════════════════════════════════╝
-    `)
+        `)
       })
     })
     .catch((error) => {

@@ -3,46 +3,74 @@ import { Router } from 'express'
 import { verifyWalletSignature, getExpectedMessage } from '../services/walletVerifier.js'
 import { generateToken } from '../services/jwtService.js'
 import { setCsrfToken } from '../middleware/csrf.js'
-import { authLimiter } from '../middleware/rateLimiter.js'
 import { config } from '../config/env.js'
 import type { VerifyWalletRequest } from '../types/index.js'
 
 const router = Router()
 
-/**
- * Cookie options based on environment
- * - Production (custom domain): cross-subdomain via .exhibitiondefi.xyz
- * - Production (Vercel preview): cross-origin, no domain lock
- * - Development (localhost): strict, no secure
- */
 const getCookieOptions = () => {
   if (!config.server.isProduction) {
     return {
       secure: false,
-      sameSite: 'strict' as const,
+      sameSite: 'lax' as const,
       domain: undefined,
     }
   }
-  if (config.server.isCustomDomain) {
-    return {
-      secure: true,
-      sameSite: 'none' as const,
-      domain: '.exhibitiondefi.xyz',
-    }
-  }
-  // Vercel preview URLs
   return {
     secure: true,
-    sameSite: 'none' as const,
-    domain: undefined,
+    sameSite: 'lax' as const,
+    domain: '.exhibitiondefi.xyz',
   }
 }
 
 /**
- * POST /api/auth/verify
- * Verify wallet signature and issue JWT token
+ * GET /api/auth/message
  */
-router.post('/verify', authLimiter, async (req, res) => {
+router.get('/message', (_req, res) => {
+  res.json({
+    success: true,
+    data: { message: getExpectedMessage() }
+  })
+})
+
+/**
+ * GET /api/auth/me
+ * Check existing session via httpOnly cookie
+ */
+router.get('/me', async (req, res) => {
+  const token = req.cookies?.auth_token
+
+  if (!token) {
+    res.status(401).json({ success: false, error: 'Not authenticated' })
+    return
+  }
+
+  const { verifyToken } = await import('../services/jwtService.js')
+  const decoded = verifyToken(token)
+
+  if (!decoded) {
+    res.status(401).json({ success: false, error: 'Invalid or expired token' })
+    return
+  }
+
+  // Refresh CSRF token on session restore so frontend always has a valid one
+  const csrfToken = setCsrfToken(req, res)
+
+  res.json({
+    success: true,
+    data: {
+      address:   decoded.address,
+      expiresAt: decoded.exp * 1000,
+      csrfToken,                      // ← return it so frontend can hydrate store
+    }
+  })
+})
+
+/**
+ * POST /api/auth/verify
+ * authLimiter removed — applied globally in app.ts
+ */
+router.post('/verify', async (req, res) => {
   try {
     const { address, signature, message } = req.body as VerifyWalletRequest
 
@@ -81,7 +109,7 @@ router.post('/verify', authLimiter, async (req, res) => {
       success: true,
       message: 'Authentication successful',
       data: {
-        address: verification.recoveredAddress,
+        address:   verification.recoveredAddress,
         csrfToken,
       }
     })
@@ -98,7 +126,6 @@ router.post('/verify', authLimiter, async (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Clear auth cookies
  */
 router.post('/logout', (_req, res) => {
   const cookieOptions = getCookieOptions()
@@ -106,58 +133,7 @@ router.post('/logout', (_req, res) => {
   res.clearCookie('auth_token', cookieOptions)
   res.clearCookie('csrf_token', cookieOptions)
 
-  res.json({
-    success: true,
-    message: 'Logged out successfully'
-  })
-})
-
-/**
- * GET /api/auth/me
- * Get current user info (requires auth)
- */
-router.get('/me', async (req, res) => {
-  const token = req.cookies?.auth_token
-
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      error: 'Not authenticated'
-    })
-    return
-  }
-
-  const { verifyToken } = await import('../services/jwtService.js')
-  const decoded = verifyToken(token)
-
-  if (!decoded) {
-    res.status(401).json({
-      success: false,
-      error: 'Invalid token'
-    })
-    return
-  }
-
-  res.json({
-    success: true,
-    data: {
-      address: decoded.address,
-      expiresAt: decoded.exp * 1000
-    }
-  })
-})
-
-/**
- * GET /api/auth/message
- * Get the message that should be signed
- */
-router.get('/message', (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      message: getExpectedMessage()
-    }
-  })
+  res.json({ success: true, message: 'Logged out successfully' })
 })
 
 export default router

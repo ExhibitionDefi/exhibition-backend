@@ -6,6 +6,7 @@ export interface ProjectMetadata {
   projectId: string
   twitter?: string
   website?: string
+  whitepaper?: string
   overview?: string
   ownerAddress: string
   lastUpdated: number
@@ -35,6 +36,7 @@ export class ProjectMetadataModel {
     data: {
       twitter?: string
       website?: string
+      whitepaper?: string
       overview?: string
     }
   ): Promise<ProjectMetadata> {

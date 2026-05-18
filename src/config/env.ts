@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import dotenv from 'dotenv'
-import type { StringValue } from 'ms' 
+import type { StringValue } from 'ms'
 
 dotenv.config()
 
@@ -14,17 +14,14 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().default('24h'),
   SIGNATURE_MESSAGE: z.string().min(10, 'SIGNATURE_MESSAGE too short'),
-  WALLET_WHITELIST: z.string().transform((val: string) => 
-    val.split(',').map((addr: string) => addr.trim().toLowerCase()).filter(Boolean)
-  ).default(''),
-  RATE_LIMIT_WINDOW_MS: z.coerce.number().positive().max(24 * 60 * 60 * 1000).default(900000),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().positive().max(24 * 60 * 60 * 1000).default(900_000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
   CSRF_SECRET: z.string().min(32, 'CSRF_SECRET must be at least 32 characters'),
   CHAIN_ID: z.string().optional(),
   RPC_URL: z.string().url().optional(),
   HELMET_ENABLED: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  // MongoDB configuration (NEW)
+  // MongoDB configuration
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   DB_NAME: z.string().default('exhibition_db'),
 })
@@ -50,7 +47,7 @@ export const config = Object.freeze({
     nodeEnv: env.NODE_ENV,
     isDevelopment: env.NODE_ENV === 'development',
     isProduction: env.NODE_ENV === 'production',
-    isCustomDomain: env.FRONTEND_URL.includes('exhibitiondefi.xyz'), // NEW
+    isCustomDomain: env.FRONTEND_URL.includes('exhibitiondefi.xyz'),
   },
   cors: {
     origin: env.FRONTEND_URL,
@@ -62,7 +59,6 @@ export const config = Object.freeze({
   },
   auth: {
     signatureMessage: env.SIGNATURE_MESSAGE,
-    walletWhitelist: env.WALLET_WHITELIST,
   },
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -81,7 +77,6 @@ export const config = Object.freeze({
   logging: {
     level: env.LOG_LEVEL,
   },
-  // Database configuration (NEW)
   database: {
     mongoUri: env.MONGODB_URI,
     dbName: env.DB_NAME,
@@ -99,7 +94,7 @@ if (config.csrf.secret.includes('change-this')) {
   if (config.server.isProduction) process.exit(1)
 }
 
-// Validate MongoDB URI (NEW)
+// Validate MongoDB URI
 if (!config.database.mongoUri || config.database.mongoUri.includes('change-this')) {
   console.error('❌ MONGODB_URI is missing or placeholder!')
   if (config.server.isProduction) process.exit(1)
@@ -111,11 +106,4 @@ if (!config.server.isProduction) {
   console.log(`   Port: ${config.server.port}`)
   console.log(`   Frontend: ${config.cors.origin}`)
   console.log(`   Database: ${config.database.dbName}`)
-  console.log(
-    `   Whitelist: ${
-      config.auth.walletWhitelist.length > 0
-        ? `${config.auth.walletWhitelist.length} wallets`
-        : 'DISABLED'
-    }`
-  )
 }

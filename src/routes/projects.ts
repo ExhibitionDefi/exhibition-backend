@@ -11,9 +11,9 @@ import rateLimit from 'express-rate-limit'
 const router = Router()
 
 // Constants for validation
-const MAX_OVERVIEW_LENGTH = 500
+const MAX_OVERVIEW_LENGTH = 1000
 const MAX_URL_LENGTH = 2048
-const MAX_PROJECT_ID_LENGTH = 100
+const MAX_PROJECT_ID_LENGTH = 500
 
 /**
  * Rate limiter specifically for metadata updates
@@ -281,7 +281,7 @@ router.post(
       }
       
       const projectId = sanitizeInput(req.params.id)
-      const { twitter, website, overview } = req.body
+      const { twitter, website, whitepaper, overview } = req.body
       const walletAddress = req.user?.address
       
       if (!walletAddress) {
@@ -356,6 +356,27 @@ router.post(
         }
         sanitizedWebsite = validWebsite
       }
+
+      let sanitizedWhitepaper: string | undefined = undefined
+      if (whitepaper) {
+        if (typeof whitepaper !== 'string' || whitepaper.length > MAX_URL_LENGTH) {
+          res.status(400).json({
+            success: false,
+            message: 'Whitepaper URL too long or invalid'
+          })
+          return
+        }
+
+        const validWhitepaper = validateWebsiteUrl(whitepaper)
+        if (!validWhitepaper) {
+          res.status(400).json({
+            success: false,
+            message: 'Invalid whitepaper URL'
+          })
+          return
+        }
+        sanitizedWhitepaper = validWhitepaper
+      }
       
       // ✅ Sanitize and enforce length limit on overview
       let sanitizedOverview: string | undefined = undefined
@@ -389,6 +410,7 @@ router.post(
         {
           twitter: sanitizedTwitter,
           website: sanitizedWebsite,
+          whitepaper: sanitizedWhitepaper,
           overview: sanitizedOverview
         }
       )
